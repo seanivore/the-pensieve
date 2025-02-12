@@ -1,0 +1,26 @@
+{
+  "name": "The Pensieve",
+  "version": "0.1.0",
+  "description": "One simply siphons the excess thoughts from one&#39;s mind, pours them into the basin, and examines them at one&#39;s leisure. It becomes easier to spot patterns and links, you understand, when they are in this form.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "The Pensieve": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  }
+}
