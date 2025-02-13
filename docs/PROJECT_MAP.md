@@ -117,3 +117,121 @@ And again, same 'request' object:
 
 Expected 2-3 arguments, but got 1.ts(2554)
 protocol.d.ts(127, 63): An argument for 'resultSchema' was not provided.
+
+## Debugging Approach: MCP SDK Type Resolution
+
+### Systematic Problem-Solving Strategy
+
+**Initial Problem Identification**:
+- Encountered type resolution errors in server request methods
+- Observed TypeScript compilation failures
+- Noticed incompatibility between schema parsing and request method
+
+**Debugging Methodology**:
+1. **Systematic Exploration**
+   - Methodically tested different import strategies
+   - Explored various type assertion techniques
+   - Investigated module resolution configurations
+
+2. **Hypothesis-Driven Investigation**
+   - Formed hypotheses about potential type mismatches
+   - Systematically tested each hypothesis
+   - Documented findings and eliminated incorrect approaches
+
+3. **Root Cause Analysis**
+   - Traced errors to specific method signatures
+   - Examined SDK source code and type definitions
+   - Identified potential misunderstandings in SDK usage
+
+**Key Observations**:
+- The `server.request()` method expects multiple arguments
+- Schema parsing introduces additional complexity
+- Type definitions suggest a more nuanced request structure
+
+**Debugging Principles**:
+- Minimize assumptions
+- Document each attempt
+- Maintain a clear, reproducible investigation path
+- Prepare for potential SDK-level communication
+
+**Current Status**:
+- Comprehensive investigation completed
+- Awaiting external insights or SDK documentation review
+- Open to collaborative problem-solving
+
+**Next Recommended Steps**:
+1. Reach out to MCP SDK maintainers
+2. Create a minimal reproducible example
+3. Review SDK documentation in greater depth
+4. Consider alternative implementation strategies
+
+**Philosophical Approach**:
+- View challenges as opportunities for deeper understanding
+- Embrace systematic, patient problem-solving
+- Maintain curiosity and openness to unexpected solutions
+
+## Project Development Approach
+
+### Architectural Vision
+The Pensieve is conceived as an intelligent memory management system leveraging advanced AI and semantic search technologies to create a dynamic, context-aware knowledge retrieval platform.
+
+### Development Strategy: Incremental Complexity
+
+**Initial Architectural Foundations**:
+1. **Core Components Identification**
+   - RAG (Retrieval-Augmented Generation) Pipeline
+   - Knowledge Processing Service
+   - Semantic Search Capabilities
+   - Memory Inventory Management
+
+2. **Technology Stack Selection**
+   - TypeScript for type-safe development
+   - Model Context Protocol (MCP) for structured interactions
+   - OpenAI for generative AI capabilities
+   - Qdrant for vector-based semantic search
+
+**Development Progression**:
+- **Phase 1: Infrastructure Setup**
+  - Establish project structure
+  - Configure TypeScript and module resolution
+  - Set up dependency management
+  - Create basic service interfaces
+
+- **Phase 2: Core Services Implementation**
+  - Develop Knowledge Processor
+  - Implement RAG Pipeline
+  - Create Qdrant vector database integration
+  - Build memory inventory parsing utility
+
+- **Phase 3: MCP Server Integration**
+  - Implement server request handlers
+  - Define tool and resource schemas
+  - Create semantic search and memory retrieval logic
+  - Handle complex query processing
+
+**Design Principles**:
+- Modular architecture
+- Separation of concerns
+- Type-safe implementations
+- Extensible service design
+
+**Key Design Decisions**:
+- Use of semantic search for intelligent memory retrieval
+- Dynamic context generation
+- Flexible memory representation
+- AI-assisted query interpretation
+
+**Iterative Refinement Approach**:
+- Continuous testing and validation
+- Incremental feature development
+- Systematic debugging and optimization
+- Open to architectural pivots based on emerging requirements
+
+**Future Expansion Considerations**:
+- Multi-modal memory support
+- Advanced context understanding
+- Improved AI reasoning capabilities
+- Scalable memory management
+
+### Development Philosophy
+Build a system that doesn't just store memories, but understands, connects, and breathes life into stored knowledge.
