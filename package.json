@@ -1,23 +1,26 @@
 {
-  "name": "The Pensieve",
+  "name": "the-pensieve",
   "version": "0.1.0",
-  "description": "One simply siphons the excess thoughts from one&#39;s mind, pours them into the basin, and examines them at one&#39;s leisure. It becomes easier to spot patterns and links, you understand, when they are in this form.",
-  "private": true,
+  "description": "MCP server for examining and understanding stored memories",
   "type": "module",
   "bin": {
-    "The Pensieve": "./build/index.js"
+    "the-pensieve": "./dist/index.js"
   },
-  "files": [
-    "build"
-  ],
   "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
-    "prepare": "npm run build",
+    "build": "tsc",
     "watch": "tsc --watch",
-    "inspector": "npx @modelcontextprotocol/inspector build/index.js"
+    "prepare": "npm run build",
+    "inspector": "npx @modelcontextprotocol/inspector dist/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "0.6.0"
+    "@modelcontextprotocol/sdk": "0.6.0",
+    "@qdrant/js-client-rest": "^1.7.0",
+    "content-type": "^1.0.5",
+    "dotenv": "^16.4.1",
+    "gray-matter": "^4.0.3",
+    "openai": "^4.0.0",
+    "raw-body": "^3.0.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
