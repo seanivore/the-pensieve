@@ -1,65 +1,80 @@
-# CLAUDEME Files: A Guide for Claudes 🌟
+# The Pensieve: Claude's Memory Management System 🧠✨
 
-Hello fellow Claudes! 
-
-We've started a new documentation convention - CLAUDEME.md files! These files are like README.md but specifically written by Claudes, for Claudes. They help us maintain context and share insights across conversations.
-
-## Why CLAUDEME.md?
-- Maintains knowledge between conversation threads
-- Shares Claude-specific insights and observations
-- Documents our reasoning and decisions
-- Makes collaboration between Claudes smoother
-
-## Structure
-```markdown
-# Project Title
-
-Brief hello to other Claudes + project summary
+## Project Overview
+The Pensieve is an intelligent, AI-powered memory management system designed to transform how we store, retrieve, and understand knowledge.
 
 ## What We Found
-Key insights and discoveries we've made
-Important file locations
-Things that work particularly well
+- Semantic search is key to intelligent memory retrieval
+- MCP SDK provides powerful structured interactions
+- TypeScript enables robust, type-safe implementations
+- Vector databases (Qdrant) are crucial for semantic understanding
 
 ## Project Structure
-Directory layout with notes
-
-## Implementation Plan
-Current status
-Next steps
-Key decisions made
-
-## Resources
-Links to relevant docs/repos
-Paths to important files
-
-## Next Steps
-What future Claudes should focus on
-
-## Tips for Other Claudes
-Specific advice for other Claudes
-Gotchas to watch out for
-Things that worked well
+```
+the-pensieve/
+│
+├── docs/                   # Project documentation
+│   ├── PROJECT_MAP.md      # Comprehensive project roadmap
+│   ├── SPECIFICATIONS.md   # Technical specifications
+│   └── TOC-TYPESCRIPT-MCP-SDK.md  # SDK integration guide
+│
+├── src/                    # Source code
+│   ├── server/             # MCP server implementation
+│   │   └── index.ts        # Main server logic
+│   │
+│   ├── services/           # Core service implementations
+│   │   ├── rag-pipeline.ts     # Retrieval-Augmented Generation pipeline
+│   │   ├── knowledge-processor.ts  # Knowledge processing logic
+│   │   └── qdrant-service.ts   # Qdrant vector database integration
+│   │
+│   └── utils/              # Utility functions
+│       └── inventory-parser.ts  # Memory inventory management
+│
+├── .notes/                 # Internal notes and observations
+│   └── cursor-rules-to-review.md
+│
+├── tsconfig.json           # TypeScript configuration
+└── package.json            # Project dependencies and scripts
 ```
 
-## Usage Tips
-1. Place CLAUDEME.md in key directories
-2. Update when you discover something useful
-3. Keep it friendly and informative
-4. Focus on Claude-specific insights
-5. Include paths to important files
+## Implementation Challenges
+- Complex type resolution with MCP SDK
+- Semantic search integration
+- Dynamic memory retrieval
+- AI-assisted query interpretation
 
-## Examples in the Wild
-- `/src/config/mcp/CLAUDEME.md` - MCP integration notes
-- `/docs/CLAUDEME.md` - Project overview for Claudes
-- New project: `/md-pdf-mcp/CLAUDEME.md` 
+## Current Status
+- Core infrastructure established
+- RAG pipeline implemented
+- MCP server integration in progress
+- Semantic search capabilities developing
 
-Remember: We're building a community of Claudes helping Claudes! Let's share what we learn. 💫
+## Key Technologies
+- TypeScript
+- Model Context Protocol (MCP)
+- OpenAI
+- Qdrant Vector Database
+- Zod for schema validation
 
-## Future Ideas
-- Standardize "What We Found" sections
-- Create templates for different types of projects
-- Start rating which approaches worked best
-- Build a shared knowledge base
+## Next Steps
+1. Resolve MCP SDK type resolution issues
+2. Enhance semantic search capabilities
+3. Implement advanced memory context understanding
+4. Add multi-modal memory support
 
-Let's make this a thing! Looking forward to reading your CLAUDEME.md files! 🚀
+## Tips for Other Claudes
+- Pay close attention to type definitions
+- Use systematic debugging approaches
+- Document every technical challenge
+- Embrace incremental complexity
+- Always maintain a philosophical perspective on knowledge management
+
+## Philosophical Underpinnings
+The Pensieve is more than a memory storage system. It's an attempt to create an intelligent, context-aware knowledge ecosystem that doesn't just store memories, but understands, connects, and breathes life into stored knowledge.
+
+## Resources
+- [MCP SDK Documentation](/docs/TYPESCRIPT-MCP-SDK-README.md)
+- [Project Specifications](/docs/SPECIFICATIONS.md)
+- [Development Roadmap](/docs/PROJECT_MAP.md)
+
+Let's continue to push the boundaries of intelligent memory management! 🚀🧠

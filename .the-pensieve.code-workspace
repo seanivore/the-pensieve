@@ -2,6 +2,12 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../mcp-guides-docs-framework/typescript-sdk"
+		},
+		{
+			"path": "../_ai/resources"
 		}
 	],
 	"settings": {

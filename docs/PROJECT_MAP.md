@@ -6,6 +6,28 @@
 
 **Issue**: Difficulty with type handling in server request methods for the Model Context Protocol SDK.
 
+**Latest Findings (Schema Type Mismatches)**:
+- The `server.request()` method is experiencing schema type compatibility issues
+- Zod schema types are not properly aligning with expected request types
+- Type assertions and const assertions are not resolving the mismatch
+- The error suggests a deep type structure mismatch between Zod schemas and request types
+
+**Current Error**:
+```typescript
+Argument of type 'ZodObject<...>' is not assignable to parameter of type '{ method: string; params?: ... }'
+```
+
+**Additional Context**:
+- The issue may be related to how Zod schemas are being used with the request method
+- Type inference between schema validation and runtime types needs investigation
+- The switch from Claude 3 Haiku to Sonnet revealed more type safety issues
+
+**Next Steps**:
+1. Create a minimal reproducible example focusing on schema handling
+2. Review MCP SDK source code for schema usage patterns
+3. Consider reaching out to SDK maintainers about schema type compatibility
+4. Explore alternative approaches to schema validation
+
 **Attempted Solutions**:
 1. Direct import of types from SDK
    - Tried various import paths:
@@ -68,55 +90,15 @@ const analysis = await server.request(CreateMessageRequestSchema.parse({
 ===
 
 Regarding: 
-```typescript
-    // 1. Use sampling to analyze the question
-    const analysis = await server.request(CreateMessageRequestSchema.parse({
-      params: {
-        _meta: {},
-        messages: [{
-          role: "user",
-          content: { 
-            type: "text", 
-            text: question 
-          }
-        }],
-        systemPrompt: "You are the Pensieve, a magical device for examining memories and knowledge. Analyze this question to determine which memories to retrieve.",
-        includeContext: "none"
-      }
-    }));
-```
 
-Expected 2-3 arguments, but got 1.ts(2554)
-protocol.d.ts(127, 63): An argument for 'resultSchema' was not provided.
+import CreateMessageRequestSchema
+A request from the server to sample an LLM via the client. The client has full discretion over which model to select. The client should also inform the user before beginning sampling, to allow them to inspect the request (human in the loop) and decide whether to approve it.
 
-And again, same 'request' object:
+/Users/seanivore/Development/the-pensieve/node_modules/@modelcontextprotocol/sdk/dist/types.d.ts
 
-```typescript
-    // 2. Use analysis to query memories
-    const analysisText = (analysis as any).content?.text;
-    const results = await pipeline.semanticSearch(analysisText);
+Argument of type 'ZodObject<extendShape<{ method: ZodString; params: ZodOptional<ZodObject<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<......' is not assignable to parameter of type '{ method: string; params?: objectOutputType<{ _meta: ZodOptional<ZodObject<{ progressToken: ZodOptional<ZodUnion<[ZodString, ZodNumber]>>; }, "passthrough", ZodTypeAny, objectOutputType<...>, objectInputType<...>>>; }, ZodTypeAny, "passthrough"> | undefined; } | { ...; } | { ...; } | { ...; }'.ts(2345)
 
-    // 3. Use sampling to compose response
-    const response = await server.request(CreateMessageRequestSchema.parse({
-      params: {
-        _meta: {},
-        messages: [{
-          role: "user",
-          content: { 
-            type: "text", 
-            text: `Based on these memories:\n\n${results.map(r => 
-              `Memory (${r.score.toFixed(2)} relevance):\n${r.payload.full_text}\n`
-            ).join('\n')}\n\nAnswer the original question: "${question}"`
-          }
-        }],
-        systemPrompt: "You are the Pensieve, a magical device for examining memories and knowledge. Analyze this question to determine which memories to retrieve.",
-        includeContext: "none"
-      }
-    }));
-```
 
-Expected 2-3 arguments, but got 1.ts(2554)
-protocol.d.ts(127, 63): An argument for 'resultSchema' was not provided.
 
 ## Debugging Approach: MCP SDK Type Resolution
 
@@ -235,3 +217,90 @@ The Pensieve is conceived as an intelligent memory management system leveraging 
 
 ### Development Philosophy
 Build a system that doesn't just store memories, but understands, connects, and breathes life into stored knowledge.
+
+**Latest Attempts (March 2024)**:
+
+1. Helper Function with Type Guards
+```typescript
+async function createSamplingMessage(
+  messages: SamplingMessage[],
+  systemPrompt: string
+): Promise<CreateMessageResult> {
+  const request = {
+    method: "sampling/createMessage",
+    params: {
+      _meta: {},
+      messages,
+      systemPrompt,
+      includeContext: "none" as const,
+      maxTokens: 1000,
+      temperature: 0.7
+    }
+  };
+
+  const result = await server.request(
+    CreateMessageRequestSchema,
+    request,
+    CreateMessageResultSchema
+  ) as CreateMessageResult;
+
+  if (!isTextContent(result.content)) {
+    throw new Error('Expected text content in response');
+  }
+
+  return result;
+}
+```
+
+2. Improved Type Guards
+```typescript
+function isTextContent(content: unknown): content is TextContent {
+  return content !== null && 
+         typeof content === 'object' && 
+         'type' in content && 
+         content.type === 'text';
+}
+```
+
+3. Const Assertions for Literal Types
+```typescript
+content: { 
+  type: "text" as const,
+  text: question 
+}
+```
+
+**Persistent Error**:
+```typescript
+Argument of type 'ZodObject<...>' is not assignable to parameter of type 
+'{ method: string; params?: objectOutputType<...> }'
+```
+
+**Key Insights from Latest Attempts**:
+1. The issue appears to be with how Zod schemas are being passed to the request method
+2. Type assertions and guards help with result handling but don't resolve the schema mismatch
+3. The error suggests a fundamental incompatibility between Zod schema types and the expected request parameter types
+4. Moving from `CreateMessageRequestSchema.parse()` to direct schema usage didn't resolve the core issue
+
+**Model Context**:
+- Initially working with Claude 3 Haiku
+- Issues became more apparent after switching to Claude 3 Sonnet
+- Sonnet's stricter type checking revealed underlying type safety concerns
+
+**Current Hypothesis**:
+The MCP SDK's request method might expect:
+1. A plain object matching the schema shape rather than the schema itself
+2. A different method for schema validation
+3. A specific way to handle Zod schema types that we haven't discovered
+
+**For ClaudeOS Investigation**:
+1. Focus on the relationship between Zod schemas and request parameters
+2. Consider exploring the SDK's source code for schema validation patterns
+3. Look for examples of successful schema usage in the SDK's tests
+4. Consider if there's a different approach to request handling altogether
+
+**Status Update**:
+- Previous attempts to use type assertions partially successful
+- Helper function approach improved code organization
+- Core schema type mismatch remains unresolved
+- Ready for fresh perspective from ClaudeOS
