@@ -1,18 +1,33 @@
 #!/usr/bin/env node
+// =============================================================================
+// Main MCP Server Implementation - The Pensieve
+// =============================================================================
+// This is the primary server implementation combining our RAG (Retrieval Augmented
+// Generation) system with the Model Context Protocol. It provides tools for
+// processing, storing, and querying knowledge using vector embeddings and semantic
+// search.
+
 import { Server } from "@modelcontextprotocol/sdk/server";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+  CreateMessageRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import fs from "fs";
 import path from "path";
 
-// Import RAG system
+// Core RAG System Components
 import RAGPipeline from "./services/rag-pipeline.js";
 import { parseKnowledgeInventory } from "./utils/inventory-parser.js";
 import KnowledgeProcessor from "./services/knowledge-processor.js";
 import QdrantService from "./services/qdrant-service.js";
+
+// =============================================================================
+// Configuration and Environment Setup
+// =============================================================================
 
 // Get root path from args like filesystem MCP
 const rootPath = process.argv[2];
@@ -38,12 +53,16 @@ process.env.OPENAI_API_KEY = openaiKey;
 process.env.QDRANT_URL = qdrantUrl;
 process.env.QDRANT_API_KEY = qdrantKey;
 
-// Initialize RAG pipeline
+// Initialize core components
 const pipeline = new RAGPipeline();
 const knowledgeProcessor = new KnowledgeProcessor();
 const qdrantService = new QdrantService();
 
-// Create server with tools capability
+// =============================================================================
+// Server Configuration
+// =============================================================================
+
+// Create server with comprehensive capabilities
 const server = new Server(
   {
     name: "The Pensieve",
@@ -51,12 +70,56 @@ const server = new Server(
   },
   {
     capabilities: {
-      tools: {},
+      resources: {}, // For accessing memory files
+      tools: {},     // For knowledge operations
+      sampling: {},  // For LLM interactions
     },
   }
 );
 
-// Expose our tools
+// =============================================================================
+// Resource Handlers
+// =============================================================================
+
+// List available memory resources
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  const memories = await parseKnowledgeInventory();
+  return {
+    resources: memories.map(memory => ({
+      uri: `memory://${memory.type}/${memory.source || 'generated'}`,
+      mimeType: "text/markdown",
+      name: memory.metadata?.title || memory.type,
+      description: memory.metadata?.description || `A ${memory.type} memory`
+    }))
+  };
+});
+
+// Read specific memory resource
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const url = new URL(request.params.uri);
+  const memories = await parseKnowledgeInventory();
+  const memory = memories.find(m => 
+    `memory://${m.type}/${m.source || 'generated'}` === request.params.uri
+  );
+  
+  if (!memory) {
+    throw new Error(`Memory ${request.params.uri} not found`);
+  }
+
+  return {
+    contents: [{
+      uri: request.params.uri,
+      mimeType: "text/markdown",
+      text: memory.content
+    }]
+  };
+});
+
+// =============================================================================
+// Tool Handlers
+// =============================================================================
+
+// List available tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
@@ -123,6 +186,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["topic", "filename"],
         },
       },
+      {
+        name: "use_pensieve",
+        description: "Examine your stored memories and knowledge, allowing patterns and connections to emerge",
+        inputSchema: {
+          type: "object",
+          properties: {
+            question: {
+              type: "string",
+              description: "What would you like to examine in your stored knowledge?"
+            }
+          },
+          required: ["question"]
+        }
+      }
     ],
   };
 });
@@ -177,7 +254,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         console.log(`Searching for: "${query}"`);
         const results = await pipeline.semanticSearch(query, {}, maxResults);
 
-        // Format results like test-search.js
+        // Format results
         const formattedResults = results
           .map((result, i) => {
             const preview = result.payload.full_text.substring(0, 200);
@@ -294,12 +371,68 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
 
+    case "use_pensieve": {
+      const question = String(request.params.arguments?.question);
+
+      try {
+        // 1. Use sampling to analyze the question
+        const analysis = await server.request(CreateMessageRequestSchema, {
+          messages: [{
+            role: "user",
+            content: {
+              type: "text",
+              text: question
+            }
+          }],
+          systemPrompt: "You are the Pensieve, a magical device for examining memories and knowledge. Analyze this question to determine which memories to retrieve.",
+          includeContext: "none"
+        });
+
+        // 2. Use analysis to query memories
+        const results = await pipeline.semanticSearch(analysis.content.text);
+
+        // 3. Use sampling to compose response
+        const response = await server.request(CreateMessageRequestSchema, {
+          messages: [{
+            role: "user",
+            content: {
+              type: "text",
+              text: `Based on these memories:\n\n${results.map(r => 
+                `Memory (${r.score.toFixed(2)} relevance):\n${r.payload.full_text}\n`
+              ).join('\n')}\n\nAnswer the original question: "${question}"`
+            }
+          }],
+          systemPrompt: "You are the Pensieve, a magical device for examining memories and knowledge. Provide insights based on the available memories.",
+          includeContext: "none"
+        });
+
+        return {
+          content: [{
+            type: "text",
+            text: response.content.text
+          }]
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          content: [{
+            type: "text",
+            text: `Error using pensieve: ${error.message}`
+          }]
+        };
+      }
+    }
+
     default:
       throw new Error("Unknown tool");
   }
 });
 
-// Start server
+// =============================================================================
+// Server Startup
+// =============================================================================
+
+// Start server with stdio transport
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);

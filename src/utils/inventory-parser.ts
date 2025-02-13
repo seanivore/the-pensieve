@@ -1,96 +1,166 @@
+// =============================================================================
+// Memory Inventory Parser
+// =============================================================================
+// This utility parses the memory inventory, a structured markdown file that acts
+// as an index for our knowledge base. It extracts:
+// - Core memory files (markdown documents)
+// - Topics and categories
+// - Metadata using frontmatter
+// This is used by the MCP server to expose memories as resources.
+
 import { readFile } from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
-import { KnowledgeItem } from '../types.js';
+import { KnowledgeItem } from '../services/rag-pipeline';
 
-interface FileContent {
-    content: string;
-    metadata: Record<string, any>;
+// =============================================================================
+// Types
+// =============================================================================
+
+/**
+ * Structure of parsed markdown file content.
+ */
+interface ParsedContent {
+  content: string;
+  metadata: Record<string, unknown>;
 }
 
-async function readFileContent(filePath: string): Promise<FileContent | null> {
-    try {
-        // Clean the path of brackets and normalize for OS
-        const cleanPath = filePath.replace(/[\[\]]/g, '').trim();
-        // Handle both absolute and relative paths
-        const resolvedPath = path.isAbsolute(cleanPath) 
-            ? cleanPath 
-            : path.join(process.cwd(), cleanPath);
-            
-        console.log(`Attempting to read: ${resolvedPath}`);
-        const fileContent = await readFile(resolvedPath, 'utf8');
-        
-        // Parse frontmatter
-        const { data: metadata, content } = matter(fileContent);
-        
-        return { content: content.trim(), metadata };
-    } catch (err) {
-        console.error(`Could not read file ${filePath}:`, err);
-        return null;
-    }
+/**
+ * Structure for topic metadata.
+ */
+interface TopicMetadata {
+  topics: string[];
+  title: string;
+  description: string;
 }
 
+/**
+ * Structure for category metadata.
+ */
+interface CategoryMetadata {
+  categories: string[];
+  title: string;
+  description: string;
+}
+
+/**
+ * Read and parse a markdown file, extracting content and metadata.
+ * 
+ * @param filePath - Path to markdown file
+ * @returns Parsed file content and metadata, or null if reading fails
+ */
+async function readFileContent(filePath: string): Promise<ParsedContent | null> {
+  try {
+    // Clean the path of brackets and normalize for OS
+    const cleanPath = filePath.replace(/[\[\]]/g, '').trim();
+    
+    // Handle both absolute and relative paths
+    const resolvedPath = path.isAbsolute(cleanPath)
+      ? cleanPath
+      : path.join(process.cwd(), cleanPath);
+    
+    console.log(`Reading file: ${resolvedPath}`);
+    const fileContent = await readFile(resolvedPath, 'utf8');
+    
+    // Parse frontmatter for metadata
+    const { data: metadata, content } = matter(fileContent);
+    
+    return { 
+      content: content.trim(), 
+      metadata: metadata as Record<string, unknown>
+    };
+  } catch (error) {
+    console.error(`Failed to read file ${filePath}:`, error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+/**
+ * Extract a section from markdown content by its heading.
+ * 
+ * @param content - Markdown content
+ * @param sectionName - Name of section to extract
+ * @returns Extracted section content
+ */
 function extractSection(content: string, sectionName: string): string {
-    const sectionRegex = new RegExp(`### ${sectionName}[\\s\\S]*?(?=###|$)`);
-    const match = content.match(sectionRegex);
-    return match ? match[0] : '';
+  const sectionRegex = new RegExp(`### ${sectionName}[\\s\\S]*?(?=###|$)`);
+  const match = content.match(sectionRegex);
+  return match ? match[0] : '';
 }
 
+/**
+ * Parse the memory inventory file and extract all knowledge items.
+ * 
+ * @returns Array of parsed knowledge items
+ * @throws {Error} If inventory file cannot be read
+ */
 export async function parseKnowledgeInventory(): Promise<KnowledgeItem[]> {
-    const inventoryPath = path.join(process.cwd(), 'memories/INVENTORY.md');
-    console.log('Reading memory inventory from:', inventoryPath);
-    
-    const content = await readFile(inventoryPath, 'utf8');
-    console.log('Successfully read inventory file');
-    
-    const memories: KnowledgeItem[] = [];
+  const inventoryPath = path.join(process.cwd(), 'memories/INVENTORY.md');
+  console.log('Reading memory inventory from:', inventoryPath);
+  
+  const content = await readFile(inventoryPath, 'utf8');
+  console.log('Successfully read inventory file');
 
-    // Process Core Memories section
-    const coreSection = extractSection(content, 'Core Memories');
-    
-    // Extract markdown files
-    const markdownFiles = coreSection.match(/\[.*?\.md\]/g) || [];
-    for (const filePath of markdownFiles) {
-        const result = await readFileContent(filePath);
-        if (result) {
-            console.log(`Successfully read memory file: ${filePath}`);
-            memories.push({
-                type: 'memory',
-                content: result.content,
-                source: filePath.replace(/[\[\]]/g, ''),
-                metadata: result.metadata
-            });
-        } else {
-            console.log(`Failed to read memory file: ${filePath}`);
-        }
+  const memories: KnowledgeItem[] = [];
+
+  // Process Core Memories section
+  const coreSection = extractSection(content, 'Core Memories');
+
+  // Extract and process markdown files
+  const markdownFiles = coreSection.match(/\[.*?\.md\]/g) || [];
+  for (const filePath of markdownFiles) {
+    const result = await readFileContent(filePath);
+    if (result) {
+      console.log(`Successfully processed: ${filePath}`);
+      memories.push({
+        type: 'memory',
+        content: result.content,
+        source: filePath.replace(/[\[\]]/g, ''),
+        metadata: result.metadata
+      });
+    } else {
+      console.warn(`Failed to process: ${filePath}`);
     }
+  }
 
-    // Extract topics
-    const topics = (coreSection.match(/> ([^\n]+)/g) || [])
-        .map(topic => topic.replace('> ', '').trim())
-        .filter(topic => !topic.match(/\[.*\.md\]/));
+  // Extract and process topics
+  const topics = (coreSection.match(/> ([^\n]+)/g) || [])
+    .map(topic => topic.replace('> ', '').trim())
+    .filter(topic => !topic.match(/\[.*\.md\]/));
 
-    if (topics.length > 0) {
-        memories.push({
-            type: 'topics',
-            content: topics.join('\n'),
-            metadata: { topics }
-        });
-    }
+  if (topics.length > 0) {
+    const topicMetadata: TopicMetadata = {
+      topics,
+      title: 'Memory Topics',
+      description: 'Core topics and themes in our knowledge base'
+    };
 
-    // Extract categories
-    const categories = content.match(/- [A-Za-z]+/g) || [];
-    const memoryCategories = categories
-        .map(cat => cat.replace('- ', ''))
-        .filter(cat => cat.length > 0);
+    memories.push({
+      type: 'topics',
+      content: topics.join('\n'),
+      metadata: topicMetadata
+    });
+  }
 
-    if (memoryCategories.length > 0) {
-        memories.push({
-            type: 'categories',
-            content: memoryCategories.join('\n'),
-            metadata: { categories: memoryCategories }
-        });
-    }
+  // Extract and process categories
+  const categories = content.match(/- [A-Za-z]+/g) || [];
+  const memoryCategories = categories
+    .map(cat => cat.replace('- ', ''))
+    .filter(cat => cat.length > 0);
 
-    return memories;
-} 
+  if (memoryCategories.length > 0) {
+    const categoryMetadata: CategoryMetadata = {
+      categories: memoryCategories,
+      title: 'Memory Categories',
+      description: 'Classification system for our knowledge base'
+    };
+
+    memories.push({
+      type: 'categories',
+      content: memoryCategories.join('\n'),
+      metadata: categoryMetadata
+    });
+  }
+
+  return memories;
+}
