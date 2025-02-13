@@ -8,8 +8,14 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
   CreateMessageRequestSchema,
+  CreateMessageResultSchema,
+  CreateMessageRequest,
+  CreateMessageResult,
+  SamplingMessage,
+  TextContent,
   ReadResourceRequest,
-  CallToolRequest
+  CallToolRequest,
+  Result
 } from "@modelcontextprotocol/sdk/types.js";
 import { parseKnowledgeInventory } from '../utils/inventory-parser.js';
 import { RAGPipeline } from '../services/rag-pipeline.js';
@@ -116,52 +122,91 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
+// Helper function for sampling messages
+async function createSamplingMessage(
+  messages: SamplingMessage[],
+  systemPrompt: string
+): Promise<CreateMessageResult> {
+  const request = {
+    method: "sampling/createMessage",
+    params: {
+      _meta: {},
+      messages,
+      systemPrompt,
+      includeContext: "none" as const,
+      maxTokens: 1000,
+      temperature: 0.7
+    }
+  };
+
+  const result = await server.request(
+    CreateMessageRequestSchema,
+    request,
+    CreateMessageResultSchema
+  ) as CreateMessageResult;
+
+  // Type guard to ensure we have text content
+  if (!isTextContent(result.content)) {
+    throw new Error('Expected text content in response');
+  }
+
+  return result;
+}
+
+// Type guard helper
+function isTextContent(content: unknown): content is TextContent {
+  return content !== null && 
+         typeof content === 'object' && 
+         'type' in content && 
+         content.type === 'text';
+}
+
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name === "use_pensieve") {
     const question = String(request.params.arguments?.question);
 
     // 1. Use sampling to analyze the question
-    const analysis = await server.request(CreateMessageRequestSchema.parse({
-      params: {
-        _meta: {},
-        messages: [{
-          role: "user",
-          content: { 
-            type: "text", 
-            text: question 
-          }
-        }],
-        systemPrompt: "You are the Pensieve, a magical device for examining memories and knowledge. Analyze this question to determine which memories to retrieve.",
-        includeContext: "none"
-      }
-    }));
+    const analysis = await createSamplingMessage(
+      [{
+        role: "user",
+        content: { 
+          type: "text" as const,
+          text: question 
+        }
+      }],
+      "You are the Pensieve, a magical device for examining memories and knowledge. Analyze this question to determine which memories to retrieve."
+    );
+
+    if (!isTextContent(analysis.content)) {
+      throw new Error('Expected text content in analysis');
+    }
 
     // 2. Use analysis to query memories
-    const analysisText = (analysis as any).content?.text;
+    const analysisText = analysis.content.text;
     const results = await pipeline.semanticSearch(analysisText);
 
     // 3. Use sampling to compose response
-    const response = await server.request(CreateMessageRequestSchema.parse({
-      params: {
-        _meta: {},
-        messages: [{
-          role: "user",
-          content: { 
-            type: "text", 
-            text: `Based on these memories:\n\n${results.map(r => 
-              `Memory (${r.score.toFixed(2)} relevance):\n${r.payload.full_text}\n`
-            ).join('\n')}\n\nAnswer the original question: "${question}"`
-          }
-        }],
-        systemPrompt: "You are the Pensieve, a magical device for examining memories and knowledge. Analyze this question to determine which memories to retrieve.",
-        includeContext: "none"
-      }
-    }));
+    const response = await createSamplingMessage(
+      [{
+        role: "user",
+        content: { 
+          type: "text" as const,
+          text: `Based on these memories:\n\n${results.map(r => 
+            `Memory (${r.score.toFixed(2)} relevance):\n${r.payload.full_text}\n`
+          ).join('\n')}\n\nAnswer the original question: "${question}"`
+        }
+      }],
+      "You are the Pensieve, a magical device for examining memories and knowledge. Analyze this question to determine which memories to retrieve."
+    );
+
+    if (!isTextContent(response.content)) {
+      throw new Error('Expected text content in response');
+    }
 
     return {
       _meta: {},
-      response: (response as any).content?.text
+      response: response.content.text
     };
   }
   return { _meta: {} };
