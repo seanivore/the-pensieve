@@ -1,9 +1,64 @@
-# The-Pensieve Server
+# Project Map: The-Pensieve Server
+Path: `/Users/seanivore/Development/the-pensieve/docs/PROJECT_MAP.md` 
 
 ## Current Technical Challenges
 
 ### MCP SDK Type Resolution
 
+THE 411: 
+1. This RAG was functional. 
+	- We used a scaffolding MCP server, which is very helpful in almost immediately getting a server that makes a connection. 
+	- However in this process there was a new project directory created inside the original project directory. 
+2. Last Claude looked at it they were unaware of this issue. 
+	- They wrote a new index.js file that effectively eliminated a number of our other scripts, condensing things, and we had a functional MCP server too with basic template tooling. 
+	- However, most of the index.js code from Claude was incomplete where it started to add tools, or added additional functionality that is not core to getting the first version of this MCP server running, and in other places very simple code was completely skipped. 
+	- This, compounded with the functional code referencing one directory or the other with no rhyme or reason, we decided the best course of action was to move the functional code into this new directory for `the-pensieve` server, a shout-out Harry Potter reference. 
+	- Important to note that very little of the RAG code was changed. 
+	- From what we can tell, we were able to accurately move the necessary code. 
+3. The issues became when we started to build out the features of the MCP server. 
+	- Somehow, in filling in the gaps, and reattaching things, Cursor created what appear to be some serious errors that seem to spring up new errors as soon as one is solved. 
+4. The one notable thing they did that I questioned for us not having done it before was converting a lot of the javascript code to typescript. 
+	- You'll have to review the issue reports to see if this is related. 
+	- If not it might be due to basic errors in the code. 
+	- Or it might just be that we need a new pair of eyes to comb over everything along with our resources and documentation. 
+5. It is also notable that we did not get to the point of using the inspector. 
+	- Since it was running after the template framework was created, and then we were piecing together previously working code, I was pushing for us to get all of the basic functionality implemented first. 
+	- I would still like to proceed this way as much as possible because it is a much more efficient use of our time. 
+	- Build it all. Test it all. For something that, up until this point, was not a complex project, that seems to be the best development strategy. 
+	- Notably I'm also tired of creating MCPs that don't work, never get finished, and then are incredibly difficult to jump back into. 
+	- A complete build, functional or not, is easier to jump back into over time given the simplicity of this project and subsequent lack of progress report; we've only worked on it for two sessions. 
+	- However, our new project documentation system might ease the pain of jumping back into a project in the future. At least, that is the goal. 
+
+THE ESSENTIALS: 
+1. We need to create our first formal entry in our Memory System for project management documenting all that I am covering in the 411 and here. 
+2. Then we should review all code thoroughly. In the repository, we have: 
+	- The `./build/index.js` file has mysteriously not been updated since the scaffolding. 
+	- The `./dist/index.js` file is not one I have ever seen before. Please let me know how many there are supposed to be. 
+	- There is another at `./dist/server/index.js` that I also don't recall. 
+	- The files at directory `./dist/services/...` are all the ORIGINAL FUNCTIONAL RAG files. Yay. However I don't know what `types.js` is. 
+	- Curiously, there is another at `./dist/types.js` and based on the Cursor predictive text I'm assuming that one is in the right place. 
+	- The directory `./dist/utils/...` has ONE of the ORIGINAL FUNCTIONAL RAG FILES. The other file is new. 
+	- Then we have directory `./docs/...` with our core SOP documents `PROJECT_MAP.md` (this document) and `SPECIFICATIONS.md` (empty). 
+	- Also in that directory we have `TOC-TYPESCRIPT-MCP-SDK.md` and `TYPESCRIPT-MCP-SDK-README.md` for reference documentation on the MCP SDK. 
+	- God damn it, now I know why Cursor Composer AI kept mentioning creating fake memories to test things. 
+		- The entire `KNOWLEDGE_INVENTORY.md` file is missing. 
+		- NOTE: We already have all of it in the RAG. 
+		- Perhaps it is not the worse thing in the world because we need to layout the process for how users should prepare documents that they place into the indicated root directory of the MCP server to go into the rag. There was a process that also created KEYWORDS that is significant for efficient RAG queries. We need to document the process AND it needs to be done in a way that is multipurpose and reusable; not just for job history. 
+	- Honestly, the directory `./memories/...` and its contents are a mystery to me because we had a functioning RAG. We will have to investigate to see why these files were created. 
+	- I'm mentioning the `./node_modules/...` directory because, in our previous iteration before adding tooling, replacing this was the solution to our primary bugs before everything in the Inspector worked (though was missing parts). 
+	- Then at the root we have those we have heard of, `package.json`, `README.md`, `tsconfig.json`, `package-lock.json` 
+	- Ah. Next, in our important directory `./src/...` we have: `index.ts` and `server/index.ts`. 
+		-  OH! Okay, my 'Ah.' explained. These files all look the same but it is because they are the typescript versions of the files in the `./dist/...` directory javascript files. So it has the same oddity of the duplicate `types.ts` file, an the rest you can explore. 
+3. Then we must make sure our documentation is up to date. 
+	- After making any adjustments to these files and their locations, along with appropriate code updates  
+	- (seriously I don't know why we can't just use the same directory for everything, I don't know on the fly what a "service" versus a "utility" is — that is meaningless for mean and presumably makes the code more complicated to create and alter. Just mentioning in case this is not standard practice.)
+4. Once we have done all of this, we need to make another formal Memory System entry documenting progress. 
+5. Finally, troubleshooting 
+	- Did reviewing files identify anything?
+	- Review all of the records below about the issues. 
+	- Note that we were able to easily see it because of a Cursor notification. 
+	- From here, plan the next phase, record it formally in Memory System, and then let's figure it out! 
+		
 **Issue**: Difficulty with type handling in server request methods for the Model Context Protocol SDK.
 
 **Latest Findings (Schema Type Mismatches)**:
@@ -20,7 +75,6 @@ Argument of type 'ZodObject<...>' is not assignable to parameter of type '{ meth
 **Additional Context**:
 - The issue may be related to how Zod schemas are being used with the request method
 - Type inference between schema validation and runtime types needs investigation
-- The switch from Claude 3 Haiku to Sonnet revealed more type safety issues
 
 **Next Steps**:
 1. Create a minimal reproducible example focusing on schema handling
