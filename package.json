@@ -13,7 +13,7 @@
     "inspector": "npx @modelcontextprotocol/inspector dist/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "0.6.0",
+    "@modelcontextprotocol/sdk": "^0.6.0",
     "@qdrant/js-client-rest": "^1.7.0",
     "content-type": "^1.0.5",
     "dotenv": "^16.4.1",

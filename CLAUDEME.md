@@ -42,6 +42,7 @@ the-pensieve/
 - Semantic search integration
 - Dynamic memory retrieval
 - AI-assisted query interpretation
+- Model transition impacts (Haiku to Sonnet revealed deeper type safety concerns)
 
 ## Current Status
 - Core infrastructure established
