@@ -1,8 +1,15 @@
 # Environment variables
 .env
 
+# Virtual environment
+venv/
+
+# Python build artifacts
+*.egg-info/
+__pycache__/
+*.pyc
+
 # Aider files
-.aider*
 .aider.chat.history.md
 .aider.tags.cache.v3
 
@@ -15,22 +22,17 @@ npm-debug.log*
 # OS files
 .DS_Store
 .DS_Store?
-._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
 Thumbs.db
 
 # IDE/Editor files
-.idea/
-.vscode/
 *.swp
 *.swo
 
-# Cursor Specific 
-*.code-workspace/
-.cursorrules
-.cursor/rules/*
-
-# Local notes directory
-.notes/ 
+# Rust specific
+target/
+**/*.rs.bk
+.cargo/
+rusty-tags.vi
