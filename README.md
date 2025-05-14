@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/seanivore-the-pensieve-badge.png)](https://mseep.ai/app/seanivore-the-pensieve)
+
 # The Pensieve MCP Server
 
 One simply siphons the excess thoughts from one's mind, pours them into the basin, and examines them at one's leisure. It becomes easier to spot patterns and links, you understand, when they are in this form.
